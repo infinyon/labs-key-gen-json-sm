@@ -91,4 +91,4 @@ cargo test
 ```
 
 
-[map]: [filter-map]: https://www.fluvio.io/smartmodules/transform/map/
+[map]: https://www.fluvio.io/smartmodules/transform/map/
