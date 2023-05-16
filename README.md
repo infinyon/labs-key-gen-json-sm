@@ -89,3 +89,6 @@ cargo build
 ```
 cargo test
 ```
+
+
+[map]: [filter-map]: https://www.fluvio.io/smartmodules/transform/map/
