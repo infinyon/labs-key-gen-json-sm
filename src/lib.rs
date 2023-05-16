@@ -1,10 +1,11 @@
+use std::collections::HashMap;
+
 use gjson::get;
 use sha256::digest;
 use once_cell::sync::OnceCell;
-use std::collections::HashMap;
+use eyre::ContextCompat;
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
-use eyre::ContextCompat;
 
 use fluvio_smartmodule::{
     smartmodule, Result, Record, RecordData,
@@ -18,14 +19,14 @@ static SPEC: OnceCell<KeygenParams> = OnceCell::new();
 const PARAM_NAME: &str = "spec";
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KeygenParams {
+struct KeygenParams {
     lookup: Vec<String>,
     key_name: String
 }
 
 /// Extract json values based on an array of dot notations:
 ///     [ "top.one", "top.two"]
-pub fn extract_json_values(json: &str, lookup: &Vec<String>) -> String {
+fn extract_json_values(json: &str, lookup: &Vec<String>) -> String {
     lookup
         .iter()
         .map(|item| get(json, item.as_str()))
@@ -35,12 +36,12 @@ pub fn extract_json_values(json: &str, lookup: &Vec<String>) -> String {
 }
 
 /// Ecapsulate sha256::digest in an API.
-pub fn generate_key(input: String) -> String {
+fn generate_key(input: String) -> String {
     digest(input)
 }
 
 /// Add keys to a json Value.
-pub fn add_keys(v: &Value, fields: &HashMap<String, String>) -> Value {
+fn add_keys(v: &Value, fields: &HashMap<String, String>) -> Value {
     match v {
         Value::Object(m) => {
             let mut m = m.clone();
@@ -55,7 +56,7 @@ pub fn add_keys(v: &Value, fields: &HashMap<String, String>) -> Value {
 
 
 /// Generate a new Key field for a JSON record
-pub fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value> {
+fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value> {
     let record: &str = std::str::from_utf8(record.value.as_ref())?;
     let key_val = extract_json_values(record, &spec.lookup);
 
