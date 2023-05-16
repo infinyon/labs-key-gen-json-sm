@@ -21,7 +21,7 @@ A JSON object:
 The transformation spec requires 2 keywords:
 * `lookup`: an array of elements that allows you to choose the `json values` to generate the digest.
     * For nested values, use dot notation such as `name.last` or `names.0.last`
-    * If you want the full nested tree to be used, choose add the root: `name`.
+    * If you want the full nested tree to be used, just use the root: `name`.
 * `key_name`: the name of the digest field. 
 
 In this example, we'll use the following transformation spec:
