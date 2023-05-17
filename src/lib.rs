@@ -50,7 +50,7 @@ fn generate_key(input: String) -> String {
 }
 
 /// Add keys to a json Value.
-fn add_key(v: &Value, new_key: String, new_value: String) -> Value {
+fn add_key(v: Value, new_key: String, new_value: String) -> Value {
     match v {
         Value::Object(m) => {
             let mut m = m.clone();
@@ -68,7 +68,7 @@ fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value>
     let key_val = extract_json_fields(record, &spec.lookup)?;
 
     let record_value: Value = serde_json::from_str(record)?;
-    let result = add_key(&record_value, 
+    let result = add_key(record_value, 
         spec.key_name.clone(),  generate_key(key_val));
     Ok(result)
 }
@@ -232,7 +232,7 @@ mod tests {
         let json_input:Value = serde_json::from_str(input).unwrap();
         let json_expected:Value = serde_json::from_str(expected).unwrap();
 
-        let result = add_key(&json_input, k, v);
+        let result = add_key(json_input, k, v);
         assert_eq!(result, json_expected);
     }
 
