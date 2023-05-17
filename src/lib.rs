@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use sha256::digest;
 use once_cell::sync::OnceCell;
 use eyre::ContextCompat;
@@ -28,17 +30,15 @@ fn extract_json_fields(data: &str, lookup: &Vec<String>) -> Result<String> {
 
     let result = lookup
         .iter()
-        .map(|item| json.pointer(item.as_str()))
-        .filter(|v| v.is_some())
-        .map(|value| {
-            let v = value.unwrap();
-            if Value::is_string(v) {
-                v.as_str().unwrap().to_owned()
+        .flat_map(|item| json.pointer(item.as_str()))
+        .map(|v| {
+            if let Some(s) = v.as_str() {
+                Cow::Borrowed(s)
             } else {
-                v.to_string()
+                Cow::Owned(v.to_string())
             }
         })
-        .collect::<Vec<String>>()
+        .collect::<Vec<Cow<str>>>()
         .join("");
 
     Ok(result)
@@ -52,12 +52,11 @@ fn generate_key(input: String) -> String {
 /// Add keys to a json Value.
 fn add_key(v: Value, new_key: String, new_value: String) -> Value {
     match v {
-        Value::Object(m) => {
-            let mut m = m.clone();
+        Value::Object(mut m) => {
             m.insert(new_key, Value::String(new_value));
             Value::Object(m)
         }
-        v => v.clone(),
+        v => v,
     }
 }
 
