@@ -20,16 +20,16 @@ A JSON object:
 
 The transformation spec requires 2 keywords:
 * `lookup`: an array of elements that allows you to choose the `json values` to generate the digest.
-    * For nested values, use dot notation such as `name.last` or `names.0.last`
-    * If you want the full nested tree to be used, just use the root: `name`.
+    * For nested values, use path notation such as `/name/last` or `/names/1/last`
+    * If you want the full nested tree to be used, just use the root: `/name`.
 * `key_name`: the name of the digest field. 
 
 In this example, we'll use the following transformation spec:
 
 ```yaml
     lookup:
-        - "pub_date"
-        - "last_build_date"
+        - "/pub_date"
+        - "/last_build_date"
     key_name: "dedup_key"
 ```
 
@@ -61,7 +61,7 @@ smdk build
 Use `smdk` to test:
 
 ```bash
-smdk test --file ./test-data/input.json --raw -e spec="{\"lookup\":[\"pub_date\", \"last_build_date\"], \"key_name\": \"dedup_key\"}"
+smdk test --file ./test-data/input.json --raw -e spec="{\"lookup\":[\"\/pub_date\", \"\/last_build_date\"], \"key_name\": \"dedup_key\"}"
 ```
 
 ### Cluster Test

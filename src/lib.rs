@@ -1,4 +1,3 @@
-use gjson::get;
 use sha256::digest;
 use once_cell::sync::OnceCell;
 use eyre::ContextCompat;
@@ -22,13 +21,23 @@ struct KeygenParams {
     key_name: String
 }
 
-/// Extract json values based on an array of dot notations:
-///     [ "top.one", "top.two"]
-fn extract_json_values(json: &str, lookup: &Vec<String>) -> String {
+/// Extract json values based on JSON pointer notations:
+///     [ "/top/one", "/top/two"]
+fn extract_json_fields(data: &str, lookup: &Vec<String>) -> String {
+    let json:Value = serde_json::from_str(data).unwrap();
+
     lookup
         .iter()
-        .map(|item| get(json, item.as_str()))
-        .map(|value| value.to_string())
+        .map(|item| json.pointer(item.as_str()))
+        .filter(|v| v.is_some())
+        .map(|value| {
+            let v = value.unwrap();
+            if Value::is_string(v) {
+                v.as_str().unwrap().to_owned()
+            } else {
+                v.to_string()
+            }
+        })
         .collect::<Vec<String>>()
         .join("")
 }
@@ -54,7 +63,7 @@ fn add_key(v: &Value, new_key: String, new_value: String) -> Value {
 /// Generate a new Key field for a JSON record
 fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value> {
     let record: &str = std::str::from_utf8(record.value.as_ref())?;
-    let key_val = extract_json_values(record, &spec.lookup);
+    let key_val = extract_json_fields(record, &spec.lookup);
 
     let record_value: Value = serde_json::from_str(record)?;
     let result = add_key(&record_value, 
@@ -101,92 +110,92 @@ mod tests {
             {
                 "pub_date": "Tue, 17 Apr 2023 14:59:04 GMT",
                 "last_build_date": "Tue, 18 Apr 2023 15:00:01 GMT",
-                "link": "https://example.com/456970",      
+                "link": "https://example.com/456970"      
             },
             {
                 "pub_date": "Tue, 17 Apr 2023 14:59:44 GMT",
                 "last_build_date": "Tue, 18 Apr 2023 15:00:01 GMT",        
-                "link": "https://example.com/3343",      
-            },
+                "link": "https://example.com/3343"      
+            }
         ],
         "pub_date": "Tue, 18 Apr 2023 18:59:04 GMT",
         "last_build_date": "Tue, 20 Apr 2023 15:00:01 GMT",
-        "link": "https://example.com/3343",      
+        "link": "https://example.com/3343"      
     }"#;
 
+
     #[test]
-    fn extract_json_values_tests() {
+    fn extract_json_fields_tests() {
 
         // digit
         let lookup = vec![
-            "id".to_owned()
+            "/id".to_owned()
         ];
         let result = "373443";
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
 
         // string
         let lookup = vec![
-            "link".to_owned(),
+            "/link".to_owned(),
         ];
         let result = r#"https://example.com/3343"#;
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
-
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
         // nested string
         let lookup = vec![
-            "name.last".to_owned(),
+            "/name/last".to_owned(),
         ];
         let result = r#"Anderson"#;
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
 
         // multiple strings
         let lookup = vec![
-            "pub_date".to_owned(),
-            "last_build_date".to_owned(),
+            "/pub_date".to_owned(),
+            "/last_build_date".to_owned(),
         ];
         let result = r#"Tue, 18 Apr 2023 18:59:04 GMTTue, 20 Apr 2023 15:00:01 GMT"#;
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
 
         // full key-value tree
         let lookup = vec![
-            "name".to_owned(),
+            "/name".to_owned(),
         ];
-        let result = r#"{"first": "Tom", "last": "Anderson"}"#;
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
+        let result = r#"{"first":"Tom","last":"Anderson"}"#;
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
 
         // full array tree
         let lookup = vec![
-            "items".to_owned()
+            "/items".to_owned()
         ];
         let result = r#"[
             {
                 "pub_date": "Tue, 17 Apr 2023 14:59:04 GMT",
                 "last_build_date": "Tue, 18 Apr 2023 15:00:01 GMT",
-                "link": "https://example.com/456970",      
+                "link": "https://example.com/456970"   
             },
             {
                 "pub_date": "Tue, 17 Apr 2023 14:59:44 GMT",
                 "last_build_date": "Tue, 18 Apr 2023 15:00:01 GMT",        
-                "link": "https://example.com/3343",      
-            },
+                "link": "https://example.com/3343"    
+            }
         ]"#;
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
+        let expected: Value = serde_json::from_str(result).unwrap();
+        assert_eq!(expected.to_string(), extract_json_fields(INPUT, &lookup));
 
         // mixed
         let lookup = vec![
-            "items.0.pub_date".to_owned(),
-            "items.0.last_build_date".to_owned(),
-            "link".to_owned()
+            "/items/1/pub_date".to_owned(),
+            "/items/0/last_build_date".to_owned(),
+            "/link".to_owned()
         ];
-        let result = r#"Tue, 17 Apr 2023 14:59:04 GMTTue, 18 Apr 2023 15:00:01 GMThttps://example.com/3343"#;
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
+        let result = r#"Tue, 17 Apr 2023 14:59:44 GMTTue, 18 Apr 2023 15:00:01 GMThttps://example.com/3343"#;
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
 
         // invalid 
         let lookup = vec![
-            "invalid".to_owned()
+            "/invalid".to_owned()
         ];
         let result = "";
-        assert_eq!(result.to_owned(), extract_json_values(INPUT, &lookup));
-        
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
     }
 
     #[test]
@@ -235,7 +244,7 @@ mod tests {
             "title": "My Json Object Title"
         }"#;
         let expected = r#"{
-            "dedup_key": "3193200642d322d171dd4c05875741ff7a4fc0f7a467b52d514d5ce273d4f762",
+            "dedup_key": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "last_build_date": "Tue, 18 Apr 2023 15:00:01 GMT",
             "description": "This is the description of my JSON object",
             "link": "http://www.example.com",
