@@ -23,10 +23,10 @@ struct KeygenParams {
 
 /// Extract json values based on JSON pointer notations:
 ///     [ "/top/one", "/top/two"]
-fn extract_json_fields(data: &str, lookup: &Vec<String>) -> String {
-    let json:Value = serde_json::from_str(data).unwrap();
+fn extract_json_fields(data: &str, lookup: &Vec<String>) -> Result<String> {
+    let json:Value = serde_json::from_str(data)?;
 
-    lookup
+    let result = lookup
         .iter()
         .map(|item| json.pointer(item.as_str()))
         .filter(|v| v.is_some())
@@ -39,7 +39,9 @@ fn extract_json_fields(data: &str, lookup: &Vec<String>) -> String {
             }
         })
         .collect::<Vec<String>>()
-        .join("")
+        .join("");
+
+    Ok(result)
 }
 
 /// Ecapsulate sha256::digest in an API.
@@ -63,7 +65,7 @@ fn add_key(v: &Value, new_key: String, new_value: String) -> Value {
 /// Generate a new Key field for a JSON record
 fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value> {
     let record: &str = std::str::from_utf8(record.value.as_ref())?;
-    let key_val = extract_json_fields(record, &spec.lookup);
+    let key_val = extract_json_fields(record, &spec.lookup)?;
 
     let record_value: Value = serde_json::from_str(record)?;
     let result = add_key(&record_value, 
@@ -132,20 +134,20 @@ mod tests {
             "/id".to_owned()
         ];
         let result = "373443";
-        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup).unwrap());
 
         // string
         let lookup = vec![
             "/link".to_owned(),
         ];
         let result = r#"https://example.com/3343"#;
-        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup).unwrap());
         // nested string
         let lookup = vec![
             "/name/last".to_owned(),
         ];
         let result = r#"Anderson"#;
-        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup).unwrap());
 
         // multiple strings
         let lookup = vec![
@@ -153,14 +155,14 @@ mod tests {
             "/last_build_date".to_owned(),
         ];
         let result = r#"Tue, 18 Apr 2023 18:59:04 GMTTue, 20 Apr 2023 15:00:01 GMT"#;
-        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup).unwrap());
 
         // full key-value tree
         let lookup = vec![
             "/name".to_owned(),
         ];
         let result = r#"{"first":"Tom","last":"Anderson"}"#;
-        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup).unwrap());
 
         // full array tree
         let lookup = vec![
@@ -179,7 +181,7 @@ mod tests {
             }
         ]"#;
         let expected: Value = serde_json::from_str(result).unwrap();
-        assert_eq!(expected.to_string(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(expected.to_string(), extract_json_fields(INPUT, &lookup).unwrap());
 
         // mixed
         let lookup = vec![
@@ -188,14 +190,14 @@ mod tests {
             "/link".to_owned()
         ];
         let result = r#"Tue, 17 Apr 2023 14:59:44 GMTTue, 18 Apr 2023 15:00:01 GMThttps://example.com/3343"#;
-        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup).unwrap());
 
         // invalid 
         let lookup = vec![
             "/invalid".to_owned()
         ];
         let result = "";
-        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup));
+        assert_eq!(result.to_owned(), extract_json_fields(INPUT, &lookup).unwrap());
     }
 
     #[test]
