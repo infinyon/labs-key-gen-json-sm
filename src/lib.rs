@@ -30,7 +30,8 @@ fn extract_json_values(json: &str, lookup: &Vec<String>) -> String {
     lookup
         .iter()
         .map(|item| get(json, item.as_str()))
-        .collect::<Vec<&str>>()
+        .map(|value| value.to_string())
+        .collect::<Vec<String>>()
         .join("")
 }
 
