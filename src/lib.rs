@@ -25,7 +25,7 @@ struct KeygenParams {
 
 /// Extract json values based on JSON pointer notations:
 ///     [ "/top/one", "/top/two"]
-fn extract_json_fields(data: &str, lookup: &Vec<String>) -> Result<String> {
+fn extract_json_fields(data: &str, lookup: &[String]) -> Result<String> {
     let json:Value = serde_json::from_str(data)?;
 
     let result = lookup
@@ -77,7 +77,7 @@ pub fn map(record: &Record) -> Result<(Option<RecordData>, RecordData)> {
     let key = record.key.clone();
     let spec = SPEC.get().wrap_err("spec is not initialized")?;
 
-    let result = add_key_to_json_record(&record, &spec)?;
+    let result = add_key_to_json_record(record, spec)?;
 
     Ok((key, serde_json::to_string(&result)?.into()))
 }
