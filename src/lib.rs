@@ -259,12 +259,21 @@ mod tests {
             ],
             key_name: "dedup_key".to_owned()
         };
+        let spec2 = KeygenParams {
+            lookup: vec![
+                "/pub_date".to_owned(), 
+            ],
+            key_name: "dedup_key".to_owned()
+        };
 
         let record = Record::new(input);
-        let result = add_key_to_json_record(&record, &spec).unwrap();
-
+        let result1 = add_key_to_json_record(&record, &spec).unwrap();
         let expected_value:Value = serde_json::from_str(expected).unwrap();
-        assert_eq!(result, expected_value);
+        assert_eq!(result1, expected_value);
+
+        let result2 = add_key_to_json_record(&record, &spec2).unwrap();
+        assert_ne!(result1, result2);
+
 
     }
 
