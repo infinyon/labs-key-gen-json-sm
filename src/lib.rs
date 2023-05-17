@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use gjson::get;
 use sha256::digest;
 use once_cell::sync::OnceCell;
@@ -41,13 +39,11 @@ fn generate_key(input: String) -> String {
 }
 
 /// Add keys to a json Value.
-fn add_keys(v: &Value, fields: &HashMap<String, String>) -> Value {
+fn add_key(v: &Value, new_key: String, new_value: String) -> Value {
     match v {
         Value::Object(m) => {
             let mut m = m.clone();
-            for (k, v) in fields {
-                m.insert(k.clone(), Value::String(v.clone()));
-            }
+            m.insert(new_key, Value::String(new_value));
             Value::Object(m)
         }
         v => v.clone(),
@@ -61,10 +57,8 @@ fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value>
     let key_val = extract_json_values(record, &spec.lookup);
 
     let record_value: Value = serde_json::from_str(record)?;
-    let result = add_keys(&record_value, &HashMap::from([
-        (spec.key_name.clone(), generate_key(key_val))
-    ]));
-
+    let result = add_key(&record_value, 
+        spec.key_name.clone(),  generate_key(key_val));
     Ok(result)
 }
 
@@ -210,15 +204,15 @@ mod tests {
     }
 
     #[test]
-
-    fn add_keys_tests() {
+    fn add_key_tests() {
         let input = r#"{
             "aaaa": "value1", 
             "bbbb": "value2"
         }"#;
-        let keys =  HashMap::from([
-            ("key".to_owned(), "0c5507584b9b6c163335cd626fca364a3a34835a71383111b492a2249a64535f".to_owned())
-        ]);
+        let (k,v ) =  (
+            "key".to_owned(), 
+            "0c5507584b9b6c163335cd626fca364a3a34835a71383111b492a2249a64535f".to_owned()
+        );
         let expected = r#"{
             "aaaa": "value1", 
             "bbbb": "value2",
@@ -227,7 +221,7 @@ mod tests {
         let json_input:Value = serde_json::from_str(input).unwrap();
         let json_expected:Value = serde_json::from_str(expected).unwrap();
 
-        let result = add_keys(&json_input, &keys);
+        let result = add_key(&json_input, k, v);
         assert_eq!(result, json_expected);
     }
 
