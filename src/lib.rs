@@ -245,7 +245,7 @@ mod tests {
             "title": "My Json Object Title"
         }"#;
         let expected = r#"{
-            "dedup_key": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "dedup_key": "3193200642d322d171dd4c05875741ff7a4fc0f7a467b52d514d5ce273d4f762",
             "last_build_date": "Tue, 18 Apr 2023 15:00:01 GMT",
             "description": "This is the description of my JSON object",
             "link": "http://www.example.com",
@@ -254,8 +254,8 @@ mod tests {
         }"#;        
         let spec = KeygenParams {
             lookup: vec![
-                "pub_date".to_owned(), 
-                "last_build_date".to_owned()
+                "/pub_date".to_owned(), 
+                "/last_build_date".to_owned()
             ],
             key_name: "dedup_key".to_owned()
         };
