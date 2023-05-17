@@ -60,7 +60,6 @@ fn add_key(v: Value, new_key: String, new_value: String) -> Value {
     }
 }
 
-
 /// Generate a new Key field for a JSON record
 fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value> {
     let record: &str = std::str::from_utf8(record.value.as_ref())?;
@@ -123,7 +122,6 @@ mod tests {
         "last_build_date": "Tue, 20 Apr 2023 15:00:01 GMT",
         "link": "https://example.com/3343"      
     }"#;
-
 
     #[test]
     fn extract_json_fields_tests() {
@@ -273,8 +271,6 @@ mod tests {
 
         let result2 = add_key_to_json_record(&record, &spec2).unwrap();
         assert_ne!(result1, result2);
-
-
     }
 
 }
