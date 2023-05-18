@@ -27,10 +27,14 @@ The transformation spec requires 2 keywords:
 In this example, we'll use the following transformation spec:
 
 ```yaml
-    lookup:
-        - "/pub_date"
-        - "/last_build_date"
-    key_name: "dedup_key"
+  transforms:
+    - uses: <group>/key-gen-json@0.1.0
+      with:
+        spec:
+          lookup:
+            - "/pub_date"
+            - "/last_build_date"
+          key_name: "dedup_key"
 ```
 
 ### Outpot Record
