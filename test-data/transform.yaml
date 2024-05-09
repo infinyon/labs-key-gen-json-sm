@@ -1,5 +1,5 @@
 transforms:
-  - uses: infinyon-labs/key-gen-json@0.1.0
+  - uses: infinyon-labs/key-gen-json@0.1.1
     with:
       spec:
         lookup:

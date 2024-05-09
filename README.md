@@ -1,6 +1,6 @@
 ## Key-Gen JSON Smartmodule
 
-SmartModule to read values from JSON Records, compute a digest, and append the new field to the record. This SmartModule is [map] type, where each record-in generates a new records-out.
+SmartModule to read values from JSON Records, compute a digest, and update record key. This SmartModule is [map] type, where each record-in generates a new records-out.
 
 ### Input Record
 
@@ -18,17 +18,16 @@ A JSON object:
 
 ### Transformation spec
 
-The transformation spec requires 2 keywords:
+The transformation spec requires one keyword:
 * `lookup`: an array of elements that allows you to choose the `json values` to generate the digest.
     * For nested values, use path notation such as `/name/last` or `/names/1/last`
     * If you want the full nested tree to be used, just use the root: `/name`.
-* `key_name`: the name of the digest field. 
 
 In this example, we'll use the following transformation spec:
 
 ```yaml
   transforms:
-    - uses: <group>/key-gen-json@0.1.0
+    - uses: infinyon-labs/key-gen-json@0.1.1
       with:
         spec:
           lookup:

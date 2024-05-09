@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::Value;
 
 use fluvio_smartmodule::{
-    smartmodule, Result, Record, RecordData,
+    smartmodule, Result, SmartModuleRecord, RecordData,
     dataplane::smartmodule::{
         SmartModuleExtraParams, SmartModuleInitError
     },
@@ -61,7 +61,7 @@ fn add_key(v: Value, new_key: String, new_value: String) -> Value {
 }
 
 /// Generate a new Key field for a JSON record
-fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value> {
+fn add_key_to_json_record(record: &SmartModuleRecord, spec: &KeygenParams) -> Result<Value> {
     let record: &str = std::str::from_utf8(record.value.as_ref())?;
     let key_val = extract_json_fields(record, &spec.lookup)?;
 
@@ -72,7 +72,7 @@ fn add_key_to_json_record(record: &Record, spec: &KeygenParams) -> Result<Value>
 }
 
 #[smartmodule(map)]
-pub fn map(record: &Record) -> Result<(Option<RecordData>, RecordData)> {
+pub fn map(record: &SmartModuleRecord) -> Result<(Option<RecordData>, RecordData)> {
     let key = record.key.clone();
     let spec = SPEC.get().wrap_err("spec is not initialized")?;
 
@@ -102,6 +102,7 @@ fn init(params: SmartModuleExtraParams) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fluvio_smartmodule::Record;
 
     static INPUT: &str = r#"{
         "name": {"first": "Tom", "last": "Anderson"},
@@ -264,7 +265,8 @@ mod tests {
             key_name: "dedup_key".to_owned()
         };
 
-        let record = Record::new(input);
+        let record = SmartModuleRecord::new(
+            Record::new(input), 0, 0);
         let result1 = add_key_to_json_record(&record, &spec).unwrap();
         let expected_value:Value = serde_json::from_str(expected).unwrap();
         assert_eq!(result1, expected_value);
